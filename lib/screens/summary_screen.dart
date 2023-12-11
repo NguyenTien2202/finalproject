@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_database/firebase_database.dart';
@@ -39,45 +40,41 @@ class _SummaryScreenState extends State<SummaryScreen> {
   double totalCO2 = 0.0;
   double displaytotalCO2 = 0.0;
 
+  StreamSubscription? stream;
+
   @override
   void initState() {
     super.initState();
-    // TODO(hails) Fix race condition
-    // fetchDataFromDatabase();
-    // _database.child('totalCo2').onValue.listen((event) {
-    //   fetchDataFromDatabase(); // Update data when changes occur
-    // });
+    stream = _database.child('totalCo2').onValue.listen((event) {
+      try {
+        handleData(event); // Update data when changes occur
+      } catch (e) {
+        debugPrint('Fetch data error: $e');
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: Unable to fetch data')));
+      }
+    });
   }
 
-  Future<void> fetchDataFromDatabase() async {
-    try {
-      // Change the reference to 'totalCo2'
-      final doc = _database.child('totalCo2');
+  @override
+  void dispose() {
+    stream?.cancel();
+    super.dispose();
+  }
 
-      await doc.once().then((DatabaseEvent? event) {
-        if (event?.snapshot.exists != true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Error: Snapshot is null')));
-          return;
-        }
-        final snapshot = event!.snapshot;
+  void handleData(DatabaseEvent event) {
+    final snapshot = event.snapshot;
 
-        final totalData =
-            TotalData.fromJson(jsonDecode(jsonEncode(snapshot.value)));
+    final totalData =
+        TotalData.fromJson(jsonDecode(jsonEncode(snapshot.value)));
 
-        electricityCO2 = totalData.element['Electricity']!;
-        transportCO2 = totalData.element['Transport']!;
-        wasteCO2 = totalData.element['Waste']!;
-        displaytotalCO2 = totalData.total;
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    } catch (e) {
-      debugPrint('Fetch data error: $e');
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Unable to fetch data')));
+    electricityCO2 = totalData.element['Electricity']!;
+    transportCO2 = totalData.element['Transport']!;
+    wasteCO2 = totalData.element['Waste']!;
+    displaytotalCO2 = totalData.total;
+    if (mounted) {
+      setState(() {});
     }
   }
 
