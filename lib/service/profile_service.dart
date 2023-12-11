@@ -33,7 +33,9 @@ class ProfileService with ChangeNotifier {
     FirebaseAuth.instance.authStateChanges().listen((user) {
       // Reload profile everytime user changes
       _currentUser = user;
-      init();
+      if (user != null) {
+        init();
+      }
     });
   }
 

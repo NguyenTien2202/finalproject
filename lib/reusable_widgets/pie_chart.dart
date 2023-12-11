@@ -258,9 +258,9 @@ List<String> convertPercentage(List<double> numbers) {
   double total = numbers.fold(0, (acc, value) => acc + value);
   double sumBeforeLast = 0;
   for (int i = 0; i < numbers.length - 1; i++) {
-    double percentage = numbers[i] / total * 100;
+    double percentage = (numbers[i] / total * 100).roundToDouble();
     sumBeforeLast += percentage;
     out.add('${percentage.toStringAsFixed(0)}%');
   }
-  return out..add('${(total - sumBeforeLast).toStringAsFixed(2)}%');
+  return out..add('${(100 - sumBeforeLast).toStringAsFixed(2)}%');
 }
