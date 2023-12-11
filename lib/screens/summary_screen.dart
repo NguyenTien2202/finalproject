@@ -6,6 +6,9 @@ import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:finalapp/data/models.dart';
+import 'package:flutter_phosphor_icons/flutter_phosphor_icons.dart';
+
+import '../reusable_widgets/pie_chart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -123,21 +126,24 @@ class _SummaryScreenState extends State<SummaryScreen> {
         padding: const EdgeInsets.all(16),
         children: <Widget>[
           const SizedBox(height: 70),
-          Container(
-            alignment: Alignment.center,
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              color:
-                  const Color.fromARGB(255, 220, 227, 212), // Màu nền của round
-            ),
-            child: Text(
-              'Total CO2 Emission:\n${displaytotalCO2.toStringAsFixed(2)} gCO2',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                color: Color.fromARGB(255, 58, 111, 60),
-                fontWeight: FontWeight.bold,
+          InkWell(
+            onTap: showPieChart,
+            child: Container(
+              alignment: Alignment.center,
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                color: const Color.fromARGB(
+                    255, 220, 227, 212), // Màu nền của round
+              ),
+              child: Text(
+                'Total CO2 Emission:\n${displaytotalCO2.toStringAsFixed(2)} gCO2',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Color.fromARGB(255, 58, 111, 60),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -191,5 +197,32 @@ class _SummaryScreenState extends State<SummaryScreen> {
         ],
       ),
     );
+  }
+
+  void showPieChart() {
+    final percentList =
+        convertPercentage([electricityCO2, transportCO2, wasteCO2]);
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => PieChartScreen(
+                config: ChartConfig(title: 'Total CO2 Emission', lines: [
+              ChartLine(
+                  icon: Icon(PhosphorIcons.lightbulb_light),
+                  value: electricityCO2,
+                  valueDisplay: percentList[0],
+                  name: 'Electricity',
+                  color: Colors.yellow),
+              ChartLine(
+                  icon: Icon(PhosphorIcons.car_light),
+                  value: transportCO2,
+                  valueDisplay: percentList[1],
+                  name: 'Transport',
+                  color: Colors.blue),
+              ChartLine(
+                  icon: Icon(PhosphorIcons.recycle_light),
+                  value: wasteCO2,
+                  valueDisplay: percentList[2],
+                  name: 'Waste',
+                  color: Colors.red),
+            ]))));
   }
 }
