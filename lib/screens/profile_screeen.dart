@@ -326,22 +326,29 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final srv = context.watch<ProfileService>();
-    final img = srv.profileImage;
     return Center(
-      child: CircleAvatar(
-        // Reference to a dynamic key to prevent FileImage cache on same file name
-        key: ValueKey(srv.lastUpdated),
-        radius: avatarSize / 2,
-        backgroundColor: Colors.grey[300],
-        backgroundImage: img != null ? FileImage(img) : null,
-        child: img != null
-            ? Container()
-            : Icon(
-                Icons.person,
-                size: iconSize,
-                color: Colors.black,
-              ),
-      ),
+      child: FutureBuilder(
+          future: srv.getProfileImage(),
+          builder: (context, snapshot) {
+            final isLoading = snapshot.connectionState != ConnectionState.done;
+            final img = snapshot.data;
+            return CircleAvatar(
+              // Reference to a dynamic key to prevent FileImage cache on same file name
+              key: ValueKey(srv.lastUpdated),
+              radius: avatarSize / 2,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: img != null ? FileImage(img) : null,
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : img != null
+                      ? Container()
+                      : Icon(
+                          Icons.person,
+                          size: iconSize,
+                          color: Colors.black,
+                        ),
+            );
+          }),
     );
   }
 }

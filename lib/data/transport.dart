@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_phosphor_icons/flutter_phosphor_icons.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
 
 import '../reusable_widgets/pie_chart.dart';
 import '../reusable_widgets/reusable_widget.dart';
+import '../service/profile_service.dart';
 import 'models.dart';
 
 class Transport extends StatefulWidget {
@@ -32,6 +34,14 @@ class _Transport extends State<Transport> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   double totalCO2 = 0.0;
+
+  late ProfileService profile;
+
+  @override
+  void initState() {
+    profile = context.read<ProfileService>();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +155,7 @@ class _Transport extends State<Transport> {
   void saveTotalCO2ToDatabase() {
     // Tạo một DatabaseReference tới nhánh totalCo2 với key là ngày tháng năm hiện tại
     DatabaseReference totalCO2Ref =
-        _database.child('totalCo2').child('Element');
+        profile.userRef.child('totalCo2').child('Element');
 
     // Lưu giá trị totalCO2 vào nhánh totalCo2
     totalCO2Ref.child('Transport').set(totalCO2);
@@ -159,6 +169,8 @@ class _Transport extends State<Transport> {
   }
 
   void showPieChart() {
+    if (totalCO2 == 0) return;
+
     final percentList =
         convertPercentage([carUsage, motorbikeUsage, busUsage, trainUsage]);
     Navigator.of(context).push(MaterialPageRoute(

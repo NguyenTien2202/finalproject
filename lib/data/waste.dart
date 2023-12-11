@@ -5,9 +5,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_phosphor_icons/flutter_phosphor_icons.dart';
+import 'package:provider/provider.dart';
 
 import '../reusable_widgets/pie_chart.dart';
 import '../reusable_widgets/reusable_widget.dart';
+import '../service/profile_service.dart';
 import 'models.dart';
 
 class Waste extends StatefulWidget {
@@ -24,6 +26,14 @@ class _Waste extends State<Waste> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   double totalCO2 = 0.0;
+
+  late ProfileService profile;
+
+  @override
+  void initState() {
+    profile = context.read<ProfileService>();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +136,7 @@ class _Waste extends State<Waste> {
 
   void saveTotalCO2ToDatabase() {
     DatabaseReference totalCO2Ref =
-        _database.child('totalCo2').child('Element');
+        profile.userRef.child('totalCo2').child('Element');
 
     // Lưu giá trị totalCO2 vào nhánh totalCo2
     totalCO2Ref.child('Waste').set(totalCO2);
@@ -141,6 +151,8 @@ class _Waste extends State<Waste> {
   }
 
   void showPieChart() {
+    if (totalCO2 == 0) return;
+
     final percentList = convertPercentage([wasteUsage]);
     Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => PieChartScreen(

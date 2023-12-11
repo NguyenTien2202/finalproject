@@ -7,8 +7,10 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:finalapp/data/models.dart';
 import 'package:flutter_phosphor_icons/flutter_phosphor_icons.dart';
+import 'package:provider/provider.dart';
 
 import '../reusable_widgets/pie_chart.dart';
+import '../service/profile_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,20 +37,20 @@ class SummaryScreen extends StatefulWidget {
 }
 
 class _SummaryScreenState extends State<SummaryScreen> {
-  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  late ProfileService profile;
 
   double electricityCO2 = 0.0;
   double transportCO2 = 0.0;
   double wasteCO2 = 0.0;
   double totalCO2 = 0.0;
-  double displaytotalCO2 = 0.0;
 
   StreamSubscription? stream;
 
   @override
   void initState() {
     super.initState();
-    stream = _database.child('totalCo2').onValue.listen((event) {
+    profile = context.read<ProfileService>();
+    stream = profile.userRef.child('totalCo2').onValue.listen((event) {
       try {
         handleData(event); // Update data when changes occur
       } catch (e) {
@@ -68,50 +70,18 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   void handleData(DatabaseEvent event) {
     final snapshot = event.snapshot;
+    final value = snapshot.value;
+    if (value == null) return;
+    debugPrint('totalData=$value');
+    final totalData = TotalData.fromJson(jsonDecode(jsonEncode(value)));
 
-    final totalData =
-        TotalData.fromJson(jsonDecode(jsonEncode(snapshot.value)));
-
-    electricityCO2 = totalData.element['Electricity']!;
-    transportCO2 = totalData.element['Transport']!;
-    wasteCO2 = totalData.element['Waste']!;
-    displaytotalCO2 = totalData.total;
+    electricityCO2 = totalData.element['Electricity'] ?? 0;
+    transportCO2 = totalData.element['Transport'] ?? 0;
+    wasteCO2 = totalData.element['Waste'] ?? 0;
+    totalCO2 = electricityCO2 + transportCO2 + wasteCO2;
     if (mounted) {
       setState(() {});
     }
-  }
-
-  void saveTotalCO2ToDatabase() {
-    // Tạo một DatabaseReference tới nhánh TotalCo2 với key là ngày tháng năm hiện tại
-    DatabaseReference totalCO2Ref = _database.child('totalCo2').child('Total');
-
-    // Lưu giá trị totalCO2 vào nhánh TotalCo2
-    totalCO2Ref.set(totalCO2);
-  }
-
-  void calculateCO2() async {
-    final doc = _database.child('totalCo2');
-    await doc.once().then((DatabaseEvent? event) {
-      if (event?.snapshot.exists != true) {
-        return ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: Snapshot is null')));
-      }
-      try {
-        final snapshot = event!.snapshot;
-        final totalData =
-            TotalData.fromJson(jsonDecode(jsonEncode(snapshot.value)));
-        totalCO2 = totalData.element['Electricity']! +
-            totalData.element['Transport']! +
-            totalData.element['Waste']!;
-        setState(() {});
-
-        saveTotalCO2ToDatabase();
-      } catch (e) {
-        debugPrint('Parse error: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: Unable to perform calculations')));
-      }
-    });
   }
 
   @override
@@ -137,7 +107,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     255, 220, 227, 212), // Màu nền của round
               ),
               child: Text(
-                'Total CO2 Emission:\n${displaytotalCO2.toStringAsFixed(2)} gCO2',
+                'Total CO2 Emission:\n${totalCO2.toStringAsFixed(2)} gCO2',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
@@ -157,10 +127,6 @@ class _SummaryScreenState extends State<SummaryScreen> {
           buildCO2Container(
               "Waste CO2 Emission:  ", "${wasteCO2.toStringAsFixed(2)} gCO2"),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: calculateCO2,
-            child: const Text('Calculate CO2'),
-          ),
         ],
       ),
     );
@@ -200,6 +166,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
   }
 
   void showPieChart() {
+    if (totalCO2 == 0) return;
+
     final percentList =
         convertPercentage([electricityCO2, transportCO2, wasteCO2]);
     Navigator.of(context).push(MaterialPageRoute(

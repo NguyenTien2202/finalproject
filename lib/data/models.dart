@@ -27,13 +27,10 @@ class CarbonData {
 
 @JsonSerializable()
 class TotalData {
-  TotalData(this.element, this.total);
+  TotalData(this.element);
 
   @JsonKey(name: 'Element')
   Map<String, double> element;
-
-  @JsonKey(name: 'Total')
-  double total;
 
   factory TotalData.fromJson(Map<String, dynamic> json) =>
       _$TotalDataFromJson(json);

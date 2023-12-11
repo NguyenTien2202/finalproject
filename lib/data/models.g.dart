@@ -29,10 +29,8 @@ TotalData _$TotalDataFromJson(Map<String, dynamic> json) => TotalData(
       (json['Element'] as Map<String, dynamic>).map(
         (k, e) => MapEntry(k, (e as num).toDouble()),
       ),
-      (json['Total'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$TotalDataToJson(TotalData instance) => <String, dynamic>{
       'Element': instance.element,
-      'Total': instance.total,
     };

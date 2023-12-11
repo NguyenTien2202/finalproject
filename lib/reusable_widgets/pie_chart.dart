@@ -256,11 +256,11 @@ class Indicator extends StatelessWidget {
 List<String> convertPercentage(List<double> numbers) {
   final out = <String>[];
   double total = numbers.fold(0, (acc, value) => acc + value);
-  double sumBeforeLast = 0;
+  int sumBeforeLast = 0;
   for (int i = 0; i < numbers.length - 1; i++) {
-    double percentage = (numbers[i] / total * 100).roundToDouble();
+    int percentage = (numbers[i] / total * 100).round();
     sumBeforeLast += percentage;
-    out.add('${percentage.toStringAsFixed(0)}%');
+    out.add('$percentage%');
   }
-  return out..add('${(100 - sumBeforeLast).toStringAsFixed(2)}%');
+  return out..add('${(100 - sumBeforeLast)}%');
 }

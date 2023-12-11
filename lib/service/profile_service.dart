@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -17,7 +18,13 @@ class ProfileService with ChangeNotifier {
   User? _currentUser;
   User get currentUser => _currentUser!;
 
-  File? get profileImage => _profileImage;
+  final _isReady = Completer<bool>();
+
+  Future<File?> getProfileImage() async {
+    await _isReady.future;
+    return _profileImage;
+  }
+
   File? _profileImage;
 
   String _getUserNameFromEmail(String email) {
@@ -25,8 +32,10 @@ class ProfileService with ChangeNotifier {
   }
 
   DatabaseReference get userRef {
-    String key = _currentUser!.email!.split('@').first;
-    return FirebaseDatabase.instance.ref().child('users').child(key);
+    return FirebaseDatabase.instance
+        .ref()
+        .child('users')
+        .child(currentUser.uid);
   }
 
   ProfileService() {
@@ -62,6 +71,9 @@ class ProfileService with ChangeNotifier {
       _profileImage = File(path.join(appDir, imagePath));
     }
 
+    if (!_isReady.isCompleted) {
+      _isReady.complete(true);
+    }
     notifyListeners();
   }
 
@@ -83,7 +95,8 @@ class ProfileService with ChangeNotifier {
   Future<void> updatePhoto(File imageFile) async {
     final Uint8List bytes = await imageFile.readAsBytes();
 
-    final savedFile = await _saveImageToLocalDirectory('profile.jpg', bytes);
+    final savedFile =
+        await _saveImageToLocalDirectory(path.basename(imageFile.path), bytes);
     // Retrieve relative path without leading "/"
     final relPath = savedFile.path.split(appDir)[1].substring(1);
     debugPrint('Saving $relPath');

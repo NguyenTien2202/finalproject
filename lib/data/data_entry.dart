@@ -3,9 +3,11 @@
 import 'dart:convert';
 
 import 'package:finalapp/data/models.dart';
+import 'package:finalapp/service/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_phosphor_icons/flutter_phosphor_icons.dart';
+import 'package:provider/provider.dart';
 
 import '../reusable_widgets/pie_chart.dart';
 import '../reusable_widgets/reusable_widget.dart';
@@ -29,6 +31,14 @@ class _DataEntry extends State<DataEntry> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   double totalCO2 = 0.0;
+
+  late ProfileService profile;
+
+  @override
+  void initState() {
+    profile = context.read<ProfileService>();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +152,7 @@ class _DataEntry extends State<DataEntry> {
   void saveTotalCO2ToDatabase() {
     // Tạo một DatabaseReference tới nhánh TotalCo2 với key là ngày tháng năm hiện tại
     DatabaseReference totalCO2Ref =
-        _database.child('totalCo2').child('Element').child('Electricity');
+        profile.userRef.child('totalCo2').child('Element').child('Electricity');
 
     // Lưu giá trị totalCO2 vào nhánh TotalCo2
     totalCO2Ref.set(totalCO2);
@@ -155,6 +165,8 @@ class _DataEntry extends State<DataEntry> {
   }
 
   void showPieChart() {
+    if (totalCO2 == 0) return;
+
     final percentList =
         convertPercentage([laptopUsage, phoneUsage, televisionUsage]);
     Navigator.of(context).push(MaterialPageRoute(
