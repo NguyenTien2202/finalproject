@@ -216,13 +216,13 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   value: transportCO2,
                   valueDisplay: percentList[1],
                   name: 'Transport',
-                  color: Colors.blue),
+                  color: Colors.red),
               ChartLine(
-                  icon: Icon(PhosphorIcons.recycle_light),
+                  icon: Icon(PhosphorIcons.trash_light),
                   value: wasteCO2,
                   valueDisplay: percentList[2],
                   name: 'Waste',
-                  color: Colors.red),
+                  color: Colors.indigo),
             ]))));
   }
 }

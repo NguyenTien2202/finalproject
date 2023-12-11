@@ -67,6 +67,7 @@ class ProfileService with ChangeNotifier {
     required String email,
     required String userName,
   }) async {
+    _userName = userName;
     await userRef.update({
       'email': email,
       'userName': userName,

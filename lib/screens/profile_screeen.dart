@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:provider/provider.dart';
 
+import '../reusable_widgets/reusable_widget.dart';
 import '../service/profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -237,6 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _updateProfile() async {
+    showLoaderDialog(context);
     try {
       if (_passwordController.text.isNotEmpty) {
         await currentUser.updatePassword(_passwordController.text);
@@ -250,6 +252,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _showSuccessMessage("Update success!");
     } catch (error) {
       _showErrorMessage("Error: $error");
+    } finally {
+      // Dismiss loader
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
@@ -308,27 +315,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
-}
-
-void showLoaderDialog(BuildContext context) {
-  AlertDialog alert = AlertDialog(
-    content: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const CircularProgressIndicator(),
-        Container(
-            margin: const EdgeInsets.only(left: 24),
-            child: const Text("Loading...")),
-      ],
-    ),
-  );
-  showDialog(
-    barrierDismissible: false,
-    context: context,
-    builder: (BuildContext context) {
-      return alert;
-    },
-  );
 }
 
 class ProfileAvatar extends StatelessWidget {
