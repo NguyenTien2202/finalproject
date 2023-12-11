@@ -1,6 +1,5 @@
-// ignore_for_file: avoid_print
-
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
@@ -12,7 +11,7 @@ class AuthService {
 
       if (gUser == null) {
         // User cancelled the sign-in process
-        print("User cancelled Google sign-in");
+        debugPrint("User cancelled Google sign-in");
         return null; // Return null to indicate no user is signed in
       }
 
@@ -31,7 +30,7 @@ class AuthService {
 
       return authResult.user;
     } catch (error) {
-      print("Error during Google sign-in: $error");
+      debugPrint("Error during Google sign-in: $error");
       return null;
     }
   }

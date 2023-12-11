@@ -1,11 +1,12 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:provider/provider.dart';
+
+import '../service/profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -16,54 +17,44 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _passwordController = TextEditingController();
+  late ProfileService srv;
+
   String _currentUserName = '';
-  Uint8List? _profileImageBytes;
 
   final currentUser = FirebaseAuth.instance.currentUser!;
   final TextEditingController _currentPasswordController =
       TextEditingController();
 
+  DatabaseReference get userRef {
+    String key = currentUser.email!.split('@').first;
+    return FirebaseDatabase.instance.ref().child('users').child(key);
+  }
+
   @override
   void initState() {
     super.initState();
-    _currentUserName = _getUserNameFromEmail(currentUser.email!);
-// Khởi tạo mật khẩu hiện tại
   }
 
-  String _getUserNameFromEmail(String email) {
-    return email.split('@').first.replaceAll(',', '.');
+  @override
+  void didChangeDependencies() {
+    srv = context.watch<ProfileService>();
+    _currentUserName = srv.userName;
+    super.didChangeDependencies();
   }
 
   Future<void> _pickAndSaveImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return;
+    debugPrint('picked image ${pickedFile.path}');
+    if (!context.mounted) return;
 
-    if (pickedFile != null) {
-      final File imageFile = File(pickedFile.path);
-      final Uint8List bytes = await imageFile.readAsBytes();
-
-      setState(() {
-        _profileImageBytes = bytes;
-      });
-
-      final String imagePath = await _saveImageToLocalDirectory(bytes);
-
-      _saveUserDataToDatabase(
-        currentUser.email!,
-        _currentUserName,
-        _passwordController.text,
-        imagePath,
-      );
+    showLoaderDialog(context);
+    await srv.updatePhoto(File(pickedFile.path));
+    // Dismiss loader dialog
+    if (context.mounted) {
+      Navigator.of(context).pop();
     }
-  }
-
-  Future<String> _saveImageToLocalDirectory(Uint8List bytes) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final String imagePath = '${appDir.path}/images/profile_image.jpg';
-    final File imageFile = File(imagePath);
-
-    await imageFile.writeAsBytes(bytes);
-    return imagePath;
   }
 
   @override
@@ -79,22 +70,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: <Widget>[
           const SizedBox(height: 30),
           GestureDetector(
-            onTap: _pickAndSaveImage,
-            child: CircleAvatar(
-              radius: 72,
-              backgroundColor: Colors.grey[300],
-              // ignore: sort_child_properties_last
-              child: _profileImageBytes != null
-                  ? null
-                  : const Icon(
-                      Icons.person,
-                      size: 72,
-                      color: Colors.black,
-                    ),
-              backgroundImage: _profileImageBytes != null
-                  ? MemoryImage(_profileImageBytes!)
-                  : null,
-            ),
+            onTap: () => _pickAndSaveImage(),
+            child: const ProfileAvatar(avatarSize: 72 * 2, iconSize: 72),
           ),
           const SizedBox(height: 10),
           Text(
@@ -174,26 +151,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _saveUserDataToDatabase(
-    String email,
-    String userName,
-    String password,
-    String imagePath,
-  ) async {
-    String key = email.split('@').first;
-
-    DatabaseReference userRef =
-        // ignore: deprecated_member_use
-        FirebaseDatabase.instance.reference().child('users').child(key);
-
-    await userRef.set({
-      'email': email,
-      'userName': userName,
-      'password': password,
-      'imagePath': imagePath,
-    });
   }
 
   Future<void> _editPassword() async {
@@ -284,19 +241,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (_passwordController.text.isNotEmpty) {
         await currentUser.updatePassword(_passwordController.text);
       }
+      await currentUser.updateDisplayName(_currentUserName);
 
-      await _saveUserDataToDatabase(
-        currentUser.email!,
-        _currentUserName,
-        _passwordController.text,
-        _profileImageBytes != null
-            ? await _saveImageToLocalDirectory(_profileImageBytes!)
-            : '',
+      await srv.saveMeta(
+        email: currentUser.email!,
+        userName: _currentUserName,
       );
-
-      // ignore: deprecated_member_use
-      await currentUser.updateProfile(displayName: _currentUserName);
-
       _showSuccessMessage("Update success!");
     } catch (error) {
       _showErrorMessage("Error: $error");
@@ -356,6 +306,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+void showLoaderDialog(BuildContext context) {
+  AlertDialog alert = AlertDialog(
+    content: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(),
+        Container(
+            margin: const EdgeInsets.only(left: 24),
+            child: const Text("Loading...")),
+      ],
+    ),
+  );
+  showDialog(
+    barrierDismissible: false,
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
+}
+
+class ProfileAvatar extends StatelessWidget {
+  const ProfileAvatar(
+      {super.key, required this.avatarSize, required this.iconSize});
+  final double avatarSize;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final srv = context.watch<ProfileService>();
+    final img = srv.profileImage;
+    return Center(
+      child: CircleAvatar(
+        // Reference to a dynamic key to prevent FileImage cache on same file name
+        key: ValueKey(srv.lastUpdated),
+        radius: avatarSize / 2,
+        backgroundColor: Colors.grey[300],
+        backgroundImage: img != null ? FileImage(img) : null,
+        child: img != null
+            ? Container()
+            : Icon(
+                Icons.person,
+                size: iconSize,
+                color: Colors.black,
+              ),
+      ),
     );
   }
 }

@@ -42,10 +42,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
   @override
   void initState() {
     super.initState();
-    fetchDataFromDatabase();
-    _database.child('totalCo2').onValue.listen((event) {
-      fetchDataFromDatabase(); // Update data when changes occur
-    });
+    // TODO(hails) Fix race condition
+    // fetchDataFromDatabase();
+    // _database.child('totalCo2').onValue.listen((event) {
+    //   fetchDataFromDatabase(); // Update data when changes occur
+    // });
   }
 
   Future<void> fetchDataFromDatabase() async {
@@ -68,7 +69,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
         transportCO2 = totalData.element['Transport']!;
         wasteCO2 = totalData.element['Waste']!;
         displaytotalCO2 = totalData.total;
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       });
     } catch (e) {
       debugPrint('Fetch data error: $e');

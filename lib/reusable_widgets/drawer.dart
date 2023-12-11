@@ -1,4 +1,5 @@
 import 'package:finalapp/reusable_widgets/my_list_title.dart';
+import 'package:finalapp/screens/profile_screeen.dart';
 import 'package:flutter/material.dart';
 
 class MyDrawer extends StatelessWidget {
@@ -21,12 +22,11 @@ class MyDrawer extends StatelessWidget {
           Column(
             children: [
               //header
-              const DrawerHeader(
-                  child: Icon(
-                Icons.person,
-                color: Colors.black,
-                size: 64,
-              )),
+              DrawerHeader(
+                  child: GestureDetector(
+                      onTap: onProfileTap,
+                      child: const ProfileAvatar(
+                          avatarSize: 64 * 2, iconSize: 64))),
               //home list title
               MyListTitle(
                 icon: Icons.home,
