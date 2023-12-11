@@ -111,7 +111,7 @@ class _Waste extends State<Waste> {
       decoration: InputDecoration(
           labelText: '$label Usage (kg)',
           suffixIcon: IconButton(
-              onPressed: () => controller.text = '0.0',
+              onPressed: () => controller.text = '',
               icon: Icon(PhosphorIcons.x_circle_light))),
     );
   }

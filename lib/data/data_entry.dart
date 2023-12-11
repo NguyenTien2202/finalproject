@@ -121,7 +121,7 @@ class _DataEntry extends State<DataEntry> {
       decoration: InputDecoration(
           labelText: '$label Usage (hours)',
           suffixIcon: IconButton(
-              onPressed: () => controller.text = '0.0',
+              onPressed: () => controller.text = '',
               icon: Icon(PhosphorIcons.x_circle_light))),
     );
   }
