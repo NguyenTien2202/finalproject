@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../reusable_widgets/pie_chart.dart';
 import '../reusable_widgets/reusable_widget.dart';
 import '../service/profile_service.dart';
+import 'data_entry.dart';
 import 'models.dart';
 
 class Waste extends StatefulWidget {
@@ -29,10 +30,29 @@ class _Waste extends State<Waste> {
 
   late ProfileService profile;
 
+  DatabaseReference get totalCO2Ref =>
+      profile.userRef.child('totalCo2').child('Element').child('Waste');
+
+  DatabaseReference get usageRef =>
+      profile.userRef.child('totalCo2').child('Usage');
+
   @override
   void initState() {
     profile = context.read<ProfileService>();
+    loadData();
     super.initState();
+  }
+
+  void loadData() async {
+    await profile.isReady.future;
+
+    totalCO2 = double.tryParse((await totalCO2Ref.get()).value.toString()) ?? 0;
+    final usageValue = (await usageRef.get()).value;
+    if (usageValue != null) {
+      final usageData = usageValue as Map<Object?, Object?>;
+      wasteController.text = parseUsageText(usageData['waste']);
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -135,11 +155,10 @@ class _Waste extends State<Waste> {
   }
 
   void saveTotalCO2ToDatabase() {
-    DatabaseReference totalCO2Ref =
-        profile.userRef.child('totalCo2').child('Element');
-
-    // Lưu giá trị totalCO2 vào nhánh totalCo2
-    totalCO2Ref.child('Waste').set(totalCO2);
+    totalCO2Ref.set(totalCO2);
+    usageRef.update({
+      'waste': wasteUsage,
+    });
   }
 
   bool _anyFieldIsEmpty() {

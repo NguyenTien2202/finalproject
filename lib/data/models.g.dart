@@ -26,11 +26,15 @@ Map<String, dynamic> _$CarbonDataToJson(CarbonData instance) =>
     };
 
 TotalData _$TotalDataFromJson(Map<String, dynamic> json) => TotalData(
-      (json['Element'] as Map<String, dynamic>).map(
+      (json['Element'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, (e as num).toDouble()),
+      ),
+      (json['Usage'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, (e as num).toDouble()),
       ),
     );
 
 Map<String, dynamic> _$TotalDataToJson(TotalData instance) => <String, dynamic>{
       'Element': instance.element,
+      'Usage': instance.usage,
     };

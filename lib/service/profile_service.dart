@@ -18,10 +18,10 @@ class ProfileService with ChangeNotifier {
   User? _currentUser;
   User get currentUser => _currentUser!;
 
-  final _isReady = Completer<bool>();
+  final isReady = Completer<bool>();
 
   Future<File?> getProfileImage() async {
-    await _isReady.future;
+    await isReady.future;
     return _profileImage;
   }
 
@@ -43,7 +43,9 @@ class ProfileService with ChangeNotifier {
       // Reload profile everytime user changes
       _currentUser = user;
       if (user != null) {
-        init();
+        try {
+          init();
+        } catch (_) {}
       }
     });
   }
@@ -71,8 +73,8 @@ class ProfileService with ChangeNotifier {
       _profileImage = File(path.join(appDir, imagePath));
     }
 
-    if (!_isReady.isCompleted) {
-      _isReady.complete(true);
+    if (!isReady.isCompleted) {
+      isReady.complete(true);
     }
     notifyListeners();
   }

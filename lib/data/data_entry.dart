@@ -34,10 +34,31 @@ class _DataEntry extends State<DataEntry> {
 
   late ProfileService profile;
 
+  DatabaseReference get totalCO2Ref =>
+      profile.userRef.child('totalCo2').child('Element').child('Electricity');
+
+  DatabaseReference get usageRef =>
+      profile.userRef.child('totalCo2').child('Usage');
+
   @override
   void initState() {
     profile = context.read<ProfileService>();
+    loadData();
     super.initState();
+  }
+
+  void loadData() async {
+    await profile.isReady.future;
+
+    totalCO2 = double.tryParse((await totalCO2Ref.get()).value.toString()) ?? 0;
+    final usageValue = (await usageRef.get()).value;
+    if (usageValue != null) {
+      final usageData = usageValue as Map<Object?, Object?>;
+      laptopController.text = parseUsageText(usageData['laptop']);
+      phoneController.text = parseUsageText(usageData['phone']);
+      televisionController.text = parseUsageText(usageData['television']);
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -150,12 +171,13 @@ class _DataEntry extends State<DataEntry> {
   }
 
   void saveTotalCO2ToDatabase() {
-    // Tạo một DatabaseReference tới nhánh TotalCo2 với key là ngày tháng năm hiện tại
-    DatabaseReference totalCO2Ref =
-        profile.userRef.child('totalCo2').child('Element').child('Electricity');
-
     // Lưu giá trị totalCO2 vào nhánh TotalCo2
     totalCO2Ref.set(totalCO2);
+    usageRef.update({
+      'laptop': laptopUsage,
+      'phone': phoneUsage,
+      'television': televisionUsage,
+    });
   }
 
   bool _anyFieldIsEmpty() {
@@ -197,3 +219,5 @@ class _DataEntry extends State<DataEntry> {
 double _parseDouble(String value) {
   return double.tryParse(value) ?? 0;
 }
+
+String parseUsageText(Object? value) => value == null ? '' : value.toString();

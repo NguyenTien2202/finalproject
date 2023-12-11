@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../reusable_widgets/pie_chart.dart';
 import '../reusable_widgets/reusable_widget.dart';
 import '../service/profile_service.dart';
+import 'data_entry.dart';
 import 'models.dart';
 
 class Transport extends StatefulWidget {
@@ -31,16 +32,38 @@ class _Transport extends State<Transport> {
   double get busUsage => _parseDouble(busController.text);
   double get trainUsage => _parseDouble(trainController.text);
 
+  late ProfileService profile;
+
+  DatabaseReference get totalCO2Ref =>
+      profile.userRef.child('totalCo2').child('Element').child('Transport');
+
+  DatabaseReference get usageRef =>
+      profile.userRef.child('totalCo2').child('Usage');
+
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   double totalCO2 = 0.0;
 
-  late ProfileService profile;
-
   @override
   void initState() {
     profile = context.read<ProfileService>();
+    loadData();
     super.initState();
+  }
+
+  void loadData() async {
+    await profile.isReady.future;
+
+    totalCO2 = double.tryParse((await totalCO2Ref.get()).value.toString()) ?? 0;
+    final usageValue = (await usageRef.get()).value;
+    if (usageValue != null) {
+      final usageData = usageValue as Map<Object?, Object?>;
+      carController.text = parseUsageText(usageData['car']);
+      motorbikeController.text = parseUsageText(usageData['motorbike']);
+      busController.text = parseUsageText(usageData['bus']);
+      trainController.text = parseUsageText(usageData['train']);
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -153,12 +176,13 @@ class _Transport extends State<Transport> {
   }
 
   void saveTotalCO2ToDatabase() {
-    // Tạo một DatabaseReference tới nhánh totalCo2 với key là ngày tháng năm hiện tại
-    DatabaseReference totalCO2Ref =
-        profile.userRef.child('totalCo2').child('Element');
-
-    // Lưu giá trị totalCO2 vào nhánh totalCo2
-    totalCO2Ref.child('Transport').set(totalCO2);
+    totalCO2Ref.set(totalCO2);
+    usageRef.update({
+      'car': carUsage,
+      'motorbike': motorbikeUsage,
+      'bus': busUsage,
+      'train': trainUsage,
+    });
   }
 
   bool _anyFieldIsEmpty() {

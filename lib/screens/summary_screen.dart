@@ -75,9 +75,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
     debugPrint('totalData=$value');
     final totalData = TotalData.fromJson(jsonDecode(jsonEncode(value)));
 
-    electricityCO2 = totalData.element['Electricity'] ?? 0;
-    transportCO2 = totalData.element['Transport'] ?? 0;
-    wasteCO2 = totalData.element['Waste'] ?? 0;
+    electricityCO2 = totalData.getElement('Electricity') ?? 0;
+    transportCO2 = totalData.getElement('Transport') ?? 0;
+    wasteCO2 = totalData.getElement('Waste') ?? 0;
     totalCO2 = electricityCO2 + transportCO2 + wasteCO2;
     if (mounted) {
       setState(() {});
