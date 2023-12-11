@@ -126,8 +126,10 @@ class _Transport extends State<Transport> {
       controller: controller,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
-        labelText: '$label Usage (hours)',
-      ),
+          labelText: '$label Usage (hours)',
+          suffixIcon: IconButton(
+              onPressed: () => controller.text = '0.0',
+              icon: Icon(PhosphorIcons.x_circle_light))),
     );
   }
 

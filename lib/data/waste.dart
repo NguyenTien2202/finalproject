@@ -109,8 +109,10 @@ class _Waste extends State<Waste> {
       controller: controller,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
-        labelText: '$label Usage (kg)',
-      ),
+          labelText: '$label Usage (kg)',
+          suffixIcon: IconButton(
+              onPressed: () => controller.text = '0.0',
+              icon: Icon(PhosphorIcons.x_circle_light))),
     );
   }
 
