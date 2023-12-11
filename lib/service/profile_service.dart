@@ -42,12 +42,21 @@ class ProfileService with ChangeNotifier {
     FirebaseAuth.instance.authStateChanges().listen((user) {
       // Reload profile everytime user changes
       _currentUser = user;
+      debugPrint('user changed current=$user');
       if (user != null) {
-        try {
-          init();
-        } catch (_) {}
+        return init();
       }
+      // Clear profile data after log out
+      clear();
     });
+  }
+
+  void clear() {
+    debugPrint('clear profile $_userName');
+    _profileImage = null;
+    lastUpdated = null;
+    _currentUser = null;
+    _userName = '';
   }
 
   void init() async {
